@@ -3,7 +3,7 @@ package imbuy.bid.infrastructure.kafka;
 import com.imbuy.events.TopicNames;
 import com.imbuy.events.bid.BidWinnerRequestEvent;
 import com.imbuy.events.bid.BidWinnerResponseEvent;
-import imbuy.bid.service.BidService;
+import imbuy.bid.application.port.in.BidUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BidRequestHandler {
 
-    private final BidService bidService;
+    private final BidUseCase bidService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @KafkaListener(topics = TopicNames.BID_REQUESTS, groupId = "bid-service")

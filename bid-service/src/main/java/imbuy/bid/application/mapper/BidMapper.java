@@ -1,7 +1,7 @@
-package imbuy.bid.mapper;
+package imbuy.bid.application.mapper;
 
-import imbuy.bid.domain.Bid;
-import imbuy.bid.dto.BidDto;
+import imbuy.bid.domain.model.Bid;
+import imbuy.bid.application.dto.BidDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

@@ -1,4 +1,4 @@
-package imbuy.bid.security;
+package imbuy.bid.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;

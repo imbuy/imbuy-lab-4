@@ -1,8 +1,8 @@
-package imbuy.bid.controller;
+package imbuy.bid.presentation.controller;
 
-import imbuy.bid.dto.BidDto;
-import imbuy.bid.dto.CreateBidDto;
-import imbuy.bid.service.BidService;
+import imbuy.bid.application.dto.BidDto;
+import imbuy.bid.application.dto.CreateBidDto;
+import imbuy.bid.application.port.in.BidUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +24,7 @@ import java.time.Duration;
 @Tag(name = "Bids", description = "Bid management APIs")
 public class BidController {
 
-    private final BidService bidService;
+    private final BidUseCase bidService;
 
     @GetMapping("/lots/{lotId}")
     @Operation(summary = "Get bid history for a lot")

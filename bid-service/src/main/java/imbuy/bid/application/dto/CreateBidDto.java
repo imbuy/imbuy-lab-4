@@ -1,4 +1,4 @@
-package imbuy.bid.dto;
+package imbuy.bid.application.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;

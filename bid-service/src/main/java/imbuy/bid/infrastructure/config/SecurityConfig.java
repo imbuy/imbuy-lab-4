@@ -1,7 +1,7 @@
-package imbuy.bid.config;
+package imbuy.bid.infrastructure.config;
 
-import imbuy.bid.security.JwtAuthenticationManager;
-import imbuy.bid.security.JwtServerAuthenticationConverter;
+import imbuy.bid.infrastructure.security.JwtAuthenticationManager;
+import imbuy.bid.infrastructure.security.JwtServerAuthenticationConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

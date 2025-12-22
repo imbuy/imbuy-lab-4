@@ -1,4 +1,4 @@
-package imbuy.bid.config;
+package imbuy.bid.infrastructure.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;

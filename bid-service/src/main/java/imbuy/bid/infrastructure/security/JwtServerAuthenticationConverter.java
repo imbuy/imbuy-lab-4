@@ -1,4 +1,4 @@
-package imbuy.bid.security;
+package imbuy.bid.infrastructure.security;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

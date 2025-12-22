@@ -1,4 +1,4 @@
-package imbuy.bid.domain;
+package imbuy.bid.infrastructure.persistence.entity;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Bid {
+public class BidEntity {
+
     @Id
     private Long id;
 
