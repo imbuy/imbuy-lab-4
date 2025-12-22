@@ -1,4 +1,4 @@
-package imbuy.category.security;
+package imbuy.category.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;

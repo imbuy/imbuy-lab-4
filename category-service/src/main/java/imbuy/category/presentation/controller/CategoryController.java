@@ -1,7 +1,7 @@
-package imbuy.category.controller;
+package imbuy.category.presentation.controller;
 
-import imbuy.category.dto.*;
-import imbuy.category.service.CategoryService;
+import imbuy.category.application.dto.*;
+import imbuy.category.application.port.in.CategoryUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,49 +20,50 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Categories", description = "Category management APIs")
 public class CategoryController {
 
-    private final CategoryService categoryService;
+    private final CategoryUseCase useCase;
 
     @GetMapping("/tree")
     @Operation(summary = "Get category tree")
-    public Mono<CategoryTreeDto> getCategoryTree() {
-        return categoryService.getCategoryTree();
+    public Mono<CategoryTreeDto> tree() {
+        return useCase.getTree();
     }
 
     @GetMapping
     @Operation(summary = "Get all categories with pagination")
-    public Flux<CategoryResponse> getAllCategoriesPaginated(
+    public Flux<CategoryResponse> all(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
+            @RequestParam(defaultValue = "20") int size
+    ) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50));
-        return categoryService.getAllCategories(pageable);
+        return useCase.getAll(pageable);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get category by ID")
-    public Mono<CategoryResponse> getCategoryById(@PathVariable Long id) {
-        return categoryService.getCategoryById(id);
+    public Mono<CategoryResponse> byId(@PathVariable Long id) {
+        return useCase.getById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new category", security = @SecurityRequirement(name = "bearerAuth"))
-    public Mono<CategoryResponse> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
-        return categoryService.createCategory(categoryRequest);
+    public Mono<CategoryResponse> create(@Valid @RequestBody CategoryRequest categoryRequest) {
+        return useCase.create(categoryRequest);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update category", security = @SecurityRequirement(name = "bearerAuth"))
-    public Mono<CategoryResponse> updateCategory(
+    public Mono<CategoryResponse> update(
             @PathVariable Long id,
-            @Valid @RequestBody CategoryRequest categoryRequest) {
-        return categoryService.updateCategory(id, categoryRequest);
+            @Valid @RequestBody CategoryRequest req
+    ) {
+        return useCase.update(id, req);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete category", security = @SecurityRequirement(name = "bearerAuth"))
-    public Mono<Void> deleteCategory(@PathVariable Long id) {
-        return categoryService.deleteCategory(id);
+    public Mono<Void> delete(@PathVariable Long id) {
+        return useCase.delete(id);
     }
 }

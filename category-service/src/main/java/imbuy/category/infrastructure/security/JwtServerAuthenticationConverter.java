@@ -1,4 +1,4 @@
-package imbuy.category.security;
+package imbuy.category.infrastructure.security;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

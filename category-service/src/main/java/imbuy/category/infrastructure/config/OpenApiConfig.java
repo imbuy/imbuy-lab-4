@@ -1,4 +1,4 @@
-package imbuy.category.config;
+package imbuy.category.infrastructure.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

@@ -1,4 +1,4 @@
-package imbuy.category.security;
+package imbuy.category.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

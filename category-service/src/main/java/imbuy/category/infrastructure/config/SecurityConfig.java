@@ -1,7 +1,7 @@
-package imbuy.category.config;
+package imbuy.category.infrastructure.config;
 
-import imbuy.category.security.JwtAuthenticationManager;
-import imbuy.category.security.JwtServerAuthenticationConverter;
+import imbuy.category.infrastructure.security.JwtAuthenticationManager;
+import imbuy.category.infrastructure.security.JwtServerAuthenticationConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

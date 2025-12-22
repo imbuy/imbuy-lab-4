@@ -1,4 +1,4 @@
-package imbuy.category.dto;
+package imbuy.category.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
