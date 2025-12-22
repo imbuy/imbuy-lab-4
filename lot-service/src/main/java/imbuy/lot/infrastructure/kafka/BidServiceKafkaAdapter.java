@@ -3,6 +3,8 @@ package imbuy.lot.infrastructure.kafka;
 import com.imbuy.events.TopicNames;
 import com.imbuy.events.bid.BidWinnerRequestEvent;
 import com.imbuy.events.bid.BidWinnerResponseEvent;
+import imbuy.lot.application.port.out.BidPort;
+import imbuy.lot.application.port.out.UserPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class BidServiceKafkaAdapter {
+public class BidServiceKafkaAdapter implements BidPort {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Map<String, CompletableFuture<Long>> pendingRequests = new ConcurrentHashMap<>();

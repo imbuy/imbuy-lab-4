@@ -6,6 +6,7 @@ import imbuy.bid.infrastructure.persistence.mapper.BidPersistenceMapper;
 import imbuy.bid.infrastructure.persistence.repository.BidR2dbcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
