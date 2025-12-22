@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: category-service
+  config:
+    import: "optional:configserver:http://config-server:8888"
+
+logging:
+  level:
+    imbuy.category: DEBUG
