@@ -3,8 +3,8 @@ package imbuy.user.infrastructure.kafka;
 import com.imbuy.events.TopicNames;
 import com.imbuy.events.user.UserRequestEvent;
 import com.imbuy.events.user.UserResponseEvent;
-import imbuy.user.mapper.UserMapper;
-import imbuy.user.service.AuthUserService;
+import imbuy.user.application.port.in.GetUserUseCase;
+import imbuy.user.infrastructure.persistence.mapper.UserPersistenceMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,8 +18,8 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class UserRequestHandler {
 
-    private final AuthUserService authUserService;
-    private final UserMapper userMapper;
+    private final GetUserUseCase authUserService;
+    private final UserPersistenceMapper userMapper;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @KafkaListener(topics = TopicNames.USER_REQUESTS, groupId = "user-service")
