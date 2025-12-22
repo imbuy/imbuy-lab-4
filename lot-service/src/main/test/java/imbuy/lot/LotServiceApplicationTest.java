@@ -4,7 +4,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import imbuy.lot.client.BidClient;
 import imbuy.lot.client.UserClient;
 import imbuy.lot.domain.Lot;
-import imbuy.lot.dto.*;
 import imbuy.lot.enums.LotStatus;
 import imbuy.lot.repository.LotRepository;
 import imbuy.lot.service.LotService;

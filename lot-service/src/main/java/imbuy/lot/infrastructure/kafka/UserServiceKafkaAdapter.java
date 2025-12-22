@@ -3,7 +3,8 @@ package imbuy.lot.infrastructure.kafka;
 import com.imbuy.events.TopicNames;
 import com.imbuy.events.user.UserRequestEvent;
 import com.imbuy.events.user.UserResponseEvent;
-import imbuy.lot.dto.UserDto;
+import imbuy.lot.application.dto.UserDto;
+import imbuy.lot.application.port.out.UserPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserServiceKafkaAdapter {
+public class UserServiceKafkaAdapter implements UserPort {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Map<String, CompletableFuture<UserDto>> pendingRequests = new ConcurrentHashMap<>();
