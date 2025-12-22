@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Notification Test - ImBuy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .controls input, .controls button {
+            margin: 5px;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        .controls input { width: 100px; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #45a049; }
+        button.disconnect { background-color: #f44336; }
+        button.disconnect:hover { background-color: #da190b; }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.connected { background-color: #d4edda; color: #155724; }
+        .status.disconnected { background-color: #f8d7da; color: #721c24; }
+        #messages {
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .message {
+            padding: 15px;
+            margin: 10px 0;
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        .message h3 { margin: 0 0 10px 0; color: #1976D2; }
+        .message p { margin: 5px 0; color: #333; }
+        .message small { color: #666; font-size: 12px; }
+        .message-info {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .message-info h3 { color: #856404; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔔 WebSocket Notification Test - ImBuy</h1>
+
+    <div class="controls">
+        <label>User ID:
+            <input type="number" id="userId" value="1" min="1">
+        </label>
+        <label>API Gateway URL:
+            <input type="text" id="apiUrl" value="http://localhost:8080" style="width: 200px;">
+        </label>
+        <br><br>
+        <button onclick="connect()" id="connectBtn">Подключиться</button>
+        <button onclick="disconnect()" class="disconnect" id="disconnectBtn" disabled>Отключиться</button>
+        <button onclick="clearMessages()">Очистить сообщения</button>
+    </div>
+
+    <div id="status" class="status disconnected">Отключено</div>
+
+    <h2>Полученные уведомления:</h2>
+    <div id="messages"></div>
+</div>
+
+<script type="module">
+    import { Client } from "https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/esm6/index.js";
+
+    let stompClient = null;
+    let userId = null;
+
+    function updateStatus(connected) {
+        const statusDiv = document.getElementById('status');
+        document.getElementById('connectBtn').disabled = connected;
+        document.getElementById('disconnectBtn').disabled = !connected;
+        statusDiv.textContent = connected ? '✅ Подключено' : '❌ Отключено';
+        statusDiv.className = 'status ' + (connected ? 'connected' : 'disconnected');
+    }
+
+    function connect() {
+        userId = document.getElementById('userId').value;
+        const apiUrl = document.getElementById('apiUrl').value;
+
+        if (!userId || userId < 1) {
+            alert('Введите корректный User ID');
+            return;
+        }
+
+        const wsUrl = apiUrl.replace(/^http/, 'ws') + '/ws/notifications';
+        stompClient = new Client({
+            brokerURL: wsUrl,
+            debug: str => console.log('STOMP: ' + str),
+            reconnectDelay: 5000
+        });
+
+        stompClient.onConnect = () => {
+            console.log('✅ STOMP connected');
+            addInfoMessage('Успешно подключено к WebSocket серверу');
+            updateStatus(true);
+
+            // Персональные уведомления
+            stompClient.subscribe(`/topic/user/${userId}/notifications`, message => {
+                const notification = JSON.parse(message.body);
+                console.log('Received personal notification:', notification);
+                showMessage(notification, 'Персональное уведомление');
+            });
+
+            // Общие уведомления
+            stompClient.subscribe('/topic/notifications', message => {
+                const notification = JSON.parse(message.body);
+                console.log('Received broadcast notification:', notification);
+                showMessage(notification, 'Общее уведомление');
+            });
+        };
+
+        stompClient.onStompError = frame => {
+            console.error('STOMP error:', frame);
+            addInfoMessage('Ошибка STOMP: ' + frame.headers['message']);
+            updateStatus(false);
+        };
+
+        stompClient.activate();
+    }
+
+    function disconnect() {
+        if (stompClient) {
+            stompClient.deactivate();
+            stompClient = null;
+            addInfoMessage('Отключено от WebSocket сервера');
+            updateStatus(false);
+        }
+    }
+
+    function showMessage(notification, source) {
+        const messagesDiv = document.getElementById('messages');
+        const createdAt = notification.createdAt ? new Date(notification.createdAt).toLocaleString('ru-RU') : new Date().toLocaleString('ru-RU');
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerHTML = `
+      <h3>${notification.title || 'Без заголовка'}</h3>
+      <p><strong>Источник:</strong> ${source}</p>
+      <p><strong>Сообщение:</strong> ${notification.message || 'Нет сообщения'}</p>
+      <small>
+        <strong>Тип:</strong> ${notification.type || 'N/A'} |
+        <strong>User ID:</strong> ${notification.userId || 'N/A'} |
+        <strong>Создано:</strong> ${createdAt} |
+        <strong>Прочитано:</strong> ${notification.read ? 'Да' : 'Нет'}
+      </small>
+    `;
+        messagesDiv.insertBefore(div, messagesDiv.firstChild);
+    }
+
+    function addInfoMessage(text) {
+        const messagesDiv = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = 'message message-info';
+        div.innerHTML = `<h3>ℹ️ Информация</h3><p>${text}</p><small>Время: ${new Date().toLocaleString('ru-RU')}</small>`;
+        messagesDiv.insertBefore(div, messagesDiv.firstChild);
+    }
+
+    function clearMessages() {
+        document.getElementById('messages').innerHTML = '';
+    }
+
+    window.addEventListener('beforeunload', disconnect);
+    window.connect = connect;
+    window.disconnect = disconnect;
+    window.clearMessages = clearMessages;
+</script>
+</body>
+</html>

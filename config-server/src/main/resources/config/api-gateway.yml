@@ -89,6 +89,14 @@ spring:
           predicates:
             - Path=/ws/**
 
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/notifications/**
+          filters:
+            - StripPrefix=0
+
+
 springdoc:
   api-docs:
     enabled: true
