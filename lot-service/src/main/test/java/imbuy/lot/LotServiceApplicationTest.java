@@ -66,12 +66,6 @@ class LotServiceApplicationTest {
     @MockBean
     private UserPort userPort;
 
-    @MockBean
-    private BidPort bidPort;
-
-    @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
-
     @BeforeAll
     static void beforeAll() {
         postgres.start();
@@ -86,7 +80,6 @@ class LotServiceApplicationTest {
 
     @Test
     void shouldCreateAndRetrieveLot() {
-        // Arrange
         Long userId = 1L;
         UserDto userDto = new UserDto(userId, "user@test.com", "testuser", "USER");
         when(userPort.getUserById(userId)).thenReturn(userDto);
@@ -101,10 +94,8 @@ class LotServiceApplicationTest {
                 LocalDateTime.now().plusDays(7)
         );
 
-        // Act
         LotDto created = lotService.createLot(createDto, userId);
 
-        // Assert
         assertThat(created).isNotNull();
         assertThat(created.title()).isEqualTo("Test Lot");
         assertThat(created.status()).isEqualTo(LotStatus.PENDING_APPROVAL);
@@ -113,7 +104,6 @@ class LotServiceApplicationTest {
 
     @Test
     void shouldApproveLotWithModeratorRole() {
-        // Arrange
         Long userId = 1L;
         Long moderatorId = 2L;
 
@@ -135,16 +125,13 @@ class LotServiceApplicationTest {
 
         LotDto created = lotService.createLot(createDto, userId);
 
-        // Act
         LotDto approved = lotService.approveLot(created.id(), moderatorId);
 
-        // Assert
         assertThat(approved.status()).isEqualTo(LotStatus.ACTIVE);
     }
 
     @Test
     void shouldThrowExceptionWhenNonModeratorApproves() {
-        // Arrange
         Long userId = 1L;
         Long regularUserId = 3L;
 
@@ -166,7 +153,6 @@ class LotServiceApplicationTest {
 
         LotDto created = lotService.createLot(createDto, userId);
 
-        // Act & Assert
         assertThatThrownBy(() -> lotService.approveLot(created.id(), regularUserId))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("User has no permission to approve lot");
@@ -174,7 +160,6 @@ class LotServiceApplicationTest {
 
     @Test
     void shouldUpdateLotByOwner() {
-        // Arrange
         Long userId = 1L;
         UserDto userDto = new UserDto(userId, "user@test.com", "testuser", "USER");
         when(userPort.getUserById(userId)).thenReturn(userDto);
@@ -199,10 +184,8 @@ class LotServiceApplicationTest {
                 LocalDateTime.now().plusDays(10)
         );
 
-        // Act
         LotDto updated = lotService.updateLot(created.id(), updateDto, userId);
 
-        // Assert
         assertThat(updated.title()).isEqualTo("Updated Title");
         assertThat(updated.description()).isEqualTo("Updated Description");
         assertThat(updated.bid_step()).isEqualByComparingTo("15.00");
@@ -210,7 +193,6 @@ class LotServiceApplicationTest {
 
     @Test
     void shouldThrowExceptionWhenNonOwnerUpdates() {
-        // Arrange
         Long ownerId = 1L;
         Long otherUserId = 2L;
 
@@ -237,7 +219,6 @@ class LotServiceApplicationTest {
                 null, null, null, null
         );
 
-        // Act & Assert
         assertThatThrownBy(() -> lotService.updateLot(created.id(), updateDto, otherUserId))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Only owner can update lot");

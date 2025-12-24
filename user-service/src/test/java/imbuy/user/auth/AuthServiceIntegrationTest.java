@@ -1,4 +1,3 @@
-// test/java/imbuy/user/UserServiceIntegrationTest.java
 package imbuy.user.auth;
 
 import imbuy.user.application.dto.*;
@@ -51,18 +50,15 @@ class AuthServiceIntegrationTest {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        // PostgreSQL JDBC (для JPA)
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
 
-        // Kafka
         registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
         registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
         registry.add("spring.kafka.consumer.group-id", () -> "test-group");
 
-        // JWT
         registry.add("app.security.jwt.secret", () -> "dGhpc19pcy1hLWxvbmdlci1iYXNlNjQtand0LXNlY3JldC1rZXk=");
         registry.add("app.security.jwt.access-token-validity", () -> "3600000");
         registry.add("app.security.jwt.refresh-token-validity", () -> "1209600000");
@@ -104,7 +100,6 @@ class AuthServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Настраиваем мок для KafkaTemplate, чтобы тесты не падали
         when(kafkaTemplate.send(any(), any())).thenReturn(null);
     }
 
@@ -133,7 +128,7 @@ class AuthServiceIntegrationTest {
     @Order(2)
     void shouldFailRegisterWithExistingEmail() {
         RegisterRequest registerRequest = new RegisterRequest(
-                testUserEmail, // Уже существующий email
+                testUserEmail,
                 "AnotherPassword123!",
                 "anotheruser",
                 Role.USER
@@ -161,7 +156,6 @@ class AuthServiceIntegrationTest {
                     assertThat(authResponse.accessToken()).isNotBlank();
                     assertThat(authResponse.refreshToken()).isNotBlank();
 
-                    // Проверяем, что токены валидны
                     assertThat(jwtService.isValid(authResponse.accessToken(), testUserEmail)).isTrue();
                     assertThat(jwtService.isRefresh(authResponse.refreshToken())).isTrue();
                 })
@@ -201,11 +195,9 @@ class AuthServiceIntegrationTest {
     @Test
     @Order(8)
     void shouldFailRefreshWithAccessToken() {
-        // Получаем access token
         LoginRequest loginRequest = new LoginRequest(testUserEmail, testUserPassword);
         AuthResponse authResponse = authUseCase.login(loginRequest).block(Duration.ofSeconds(5));
 
-        // Пытаемся использовать access token как refresh token
         RefreshTokenRequest refreshRequest = new RefreshTokenRequest(
                 authResponse.accessToken()
         );
@@ -216,7 +208,7 @@ class AuthServiceIntegrationTest {
                                 throwable.getMessage().contains("Invalid refresh token"))
                 .verify();
     }
-    
+
     @Test
     @Order(11)
     void shouldFailFindUserWithNonExistentId() {
@@ -258,7 +250,6 @@ class AuthServiceIntegrationTest {
                 .assertNext(userDto -> {
                     assertThat(userDto.id()).isEqualTo(testUserId);
                     assertThat(userDto.email()).isEqualTo(testUserEmail);
-                    // Ничего не должно измениться
                 })
                 .verifyComplete();
     }
@@ -269,7 +260,7 @@ class AuthServiceIntegrationTest {
         RegisterRequest request = new RegisterRequest(
                 "noname@example.com",
                 "Password123!",
-                null, // null username
+                null,
                 Role.USER
         );
 
@@ -289,7 +280,7 @@ class AuthServiceIntegrationTest {
                 "defaultrole@example.com",
                 "Password123!",
                 "defaultuser",
-                null // null role - должен использоваться USER по умолчанию
+                null
         );
 
         StepVerifier.create(authUseCase.register(request))
@@ -303,7 +294,6 @@ class AuthServiceIntegrationTest {
     @Test
     @Order(22)
     void shouldValidatePasswordEncoding() {
-        // Проверяем, что пароли правильно хешируются
         String rawPassword = "TestPassword123!";
         String encoded = passwordEncoder.encode(rawPassword);
 
@@ -316,7 +306,6 @@ class AuthServiceIntegrationTest {
     @Test
     @Order(23)
     void testUserDomainModel() {
-        // Тестируем доменную модель
         imbuy.user.domain.model.User user = imbuy.user.domain.model.User.builder()
                 .id(100L)
                 .email("domain@test.com")
@@ -332,7 +321,6 @@ class AuthServiceIntegrationTest {
         assertThat(user.getRole()).isEqualTo(Role.SUPERVISOR);
         assertThat(user.isSupervisor()).isTrue();
 
-        // Проверяем builder
         imbuy.user.domain.model.User updatedUser = user.toBuilder()
                 .username("updatedname")
                 .build();
@@ -345,14 +333,9 @@ class AuthServiceIntegrationTest {
     @Test
     @Order(24)
     void shouldCleanUpTestData() {
-        // Этот тест можно использовать для очистки тестовых данных
-        // В реальном проекте лучше использовать отдельную БД для тестов
-        // или транзакции, которые откатываются после каждого теста
-
         assertThat(testUserId).isNotNull();
         assertThat(testUserEmail).isNotBlank();
 
-        // Просто логируем завершение тестов
         System.out.println("Тесты завершены. Test user ID: " + testUserId);
     }
 }
