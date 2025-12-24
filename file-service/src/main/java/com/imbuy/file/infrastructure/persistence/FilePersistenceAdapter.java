@@ -5,7 +5,6 @@ import com.imbuy.file.domain.model.FileMetadata;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 
 @Component

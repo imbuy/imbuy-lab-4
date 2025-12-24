@@ -7,7 +7,7 @@ import com.imbuy.file.application.port.in.UploadFileUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -15,8 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/files")
@@ -28,24 +26,40 @@ public class FileController {
     private final DeleteFileUseCase deleteFileUseCase;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Upload file", description = "Загрузка файла")
+    @Operation(
+            summary = "Upload file", 
+            description = "Загрузка файла для лота",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<FileDto> uploadFile(
             @Parameter(
                     description = "Файл для загрузки",
                     required = true,
                     content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)
             )
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @Parameter(description = "Номер лота", required = true)
+            @RequestParam("lotId") Long lotId) {
 
-        return ResponseEntity.ok(uploadFileUseCase.uploadFile(file));
+        return ResponseEntity.ok(uploadFileUseCase.uploadFile(file, lotId));
     }
 
     @GetMapping("/{id}")
+    @Operation(
+            summary = "Get file metadata", 
+            description = "Получение метаданных файла",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<FileDto> getFileMetadata(@PathVariable Long id) {
         return ResponseEntity.ok(getFileUseCase.getFileMetadata(id));
     }
 
     @GetMapping("/{id}/download")
+    @Operation(
+            summary = "Download file", 
+            description = "Скачивание файла",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<Resource> downloadFile(@PathVariable Long id) {
         Resource resource = getFileUseCase.getFileResource(id);
         FileDto metadata = getFileUseCase.getFileMetadata(id);
@@ -63,6 +77,11 @@ public class FileController {
 //    }
 
     @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Delete file", 
+            description = "Удаление файла",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<Void> deleteFile(
             @PathVariable Long id,
             @RequestParam("userId") Long userId) {
