@@ -1,193 +1,358 @@
-//package imbuy.user.auth;
-//
-//import imbuy.user.domain.model.Role;
-//import imbuy.user.domain.model.User;
-//import imbuy.user.application.dto.AuthResponse;
-//import imbuy.user.application.dto.LoginRequest;
-//import imbuy.user.application.dto.RefreshTokenRequest;
-//import imbuy.user.application.dto.RegisterRequest;
-//import imbuy.user.repository.UserRepository;
-//import imbuy.user.service.AuthService;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.test.context.SpringBootTest;
-//import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.test.context.ActiveProfiles;
-//import org.springframework.test.context.TestPropertySource;
-//import org.testcontainers.containers.PostgreSQLContainer;
-//import org.testcontainers.junit.jupiter.Container;
-//import org.testcontainers.junit.jupiter.Testcontainers;
-//import reactor.test.StepVerifier;
-//
-//import java.util.Optional;
-//
-//import static org.assertj.core.api.Assertions.assertThat;
-//import static org.junit.jupiter.api.Assertions.assertTrue;
-//
-//@SpringBootTest
-//@ActiveProfiles("test")
-//@Testcontainers
-//@TestPropertySource(properties = {
-//        "spring.cloud.config.enabled=false",
-//        "eureka.client.enabled=false",
-//        "springdoc.api-docs.enabled=false"
-//})
-//class AuthServiceIntegrationTest {
-//
-//    @Container
-//    @ServiceConnection
-//    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
-//            .withDatabaseName("user_auth_test")
-//            .withUsername("test")
-//            .withPassword("test");
-//
-//    @Autowired
-//    private AuthService authService;
-//
-//    @Autowired
-//    private UserRepository userRepository;
-//
-//    @Autowired
-//    private PasswordEncoder passwordEncoder;
-//
-//    private final String userEmail = "user@example.com";
-//    private final String userPassword = "Secret123!";
-//
-//    @BeforeEach
-//    void clean() {
-//        userRepository.deleteAll();
-//        userRepository.save(User.builder()
-//                .email("supervisor@test.com")
-//                .password(passwordEncoder.encode("Supervisor123!"))
-//                .username("supervisor")
-//                .role(Role.SUPERVISOR)
-//                .active(true)
-//                .build());
-//        userRepository.save(User.builder()
-//                .email("moderator@test.com")
-//                .password(passwordEncoder.encode("Moderator123!"))
-//                .username("moderator")
-//                .role(Role.MODERATOR)
-//                .active(true)
-//                .build());
-//    }
-//
-//    @Test
-//    void loginShouldReturnTokens() {
-//        userRepository.save(User.builder()
-//                .email(userEmail)
-//                .password(passwordEncoder.encode(userPassword))
-//                .username("user")
-//                .role(Role.USER)
-//                .active(true)
-//                .build());
-//
-//        StepVerifier.create(authService.login(new LoginRequest(userEmail, userPassword)))
-//                .assertNext(response -> {
-//                    assertThat(response.accessToken()).isNotBlank();
-//                    assertThat(response.refreshToken()).isNotBlank();
-//                    assertThat(response.user().email()).isEqualTo(userEmail);
-//                })
-//                .verifyComplete();
-//    }
-//
-//    @Test
-//    void registerShouldHashPasswordAndSetRole() {
-//        RegisterRequest request = new RegisterRequest(
-//                "newuser@example.com",
-//                "NewPass123!",
-//                "newuser",
-//                Role.USER
-//        );
-//
-//        StepVerifier.create(authService.register(request))
-//                .assertNext(dto -> {
-//                    assertThat(dto.id()).isNotNull();
-//                    assertThat(dto.role()).isEqualTo(Role.USER);
-//                })
-//                .verifyComplete();
-//
-//        Optional<User> saved = userRepository.findByEmail("newuser@example.com");
-//        assertTrue(saved.isPresent());
-//        assertTrue(passwordEncoder.matches("NewPass123!", saved.get().getPassword()));
-//    }
-//
-//    @Test
-//    void refreshTokenShouldReturnNewAccessToken() {
-//        userRepository.save(User.builder()
-//                .email(userEmail)
-//                .password(passwordEncoder.encode(userPassword))
-//                .username("user")
-//                .role(Role.USER)
-//                .active(true)
-//                .build());
-//
-//        AuthResponse login = authService.login(new LoginRequest(userEmail, userPassword)).block();
-//        assertThat(login).isNotNull();
-//
-//        StepVerifier.create(authService.refreshToken(new RefreshTokenRequest(login.refreshToken())))
-//                .assertNext(refreshed -> {
-//                    assertThat(refreshed.accessToken()).isNotBlank();
-//                    assertThat(refreshed.refreshToken()).isNotBlank();
-//                    assertThat(refreshed.user().email()).isEqualTo(userEmail);
-//                })
-//                .verifyComplete();
-//    }
-//
-//    @Test
-//    void moderatorShouldBeAbleToLogin() {
-//        StepVerifier.create(authService.login(new LoginRequest("moderator@test.com", "Moderator123!")))
-//                .assertNext(response -> {
-//                    assertThat(response.accessToken()).isNotBlank();
-//                    assertThat(response.refreshToken()).isNotBlank();
-//                    assertThat(response.user().email()).isEqualTo("moderator@test.com");
-//                    assertThat(response.user().role()).isEqualTo(Role.MODERATOR);
-//                })
-//                .verifyComplete();
-//    }
-//
-//    @Test
-//    void registerShouldSupportModeratorRole() {
-//        RegisterRequest request = new RegisterRequest(
-//                "newmoderator@example.com",
-//                "NewPass123!",
-//                "newmoderator",
-//                Role.MODERATOR
-//        );
-//
-//        StepVerifier.create(authService.register(request))
-//                .assertNext(dto -> {
-//                    assertThat(dto.id()).isNotNull();
-//                    assertThat(dto.role()).isEqualTo(Role.MODERATOR);
-//                })
-//                .verifyComplete();
-//
-//        Optional<User> saved = userRepository.findByEmail("newmoderator@example.com");
-//        assertTrue(saved.isPresent());
-//        assertThat(saved.get().getRole()).isEqualTo(Role.MODERATOR);
-//    }
-//
-//    @Test
-//    void registerShouldSupportSupervisorRole() {
-//        RegisterRequest request = new RegisterRequest(
-//                "newsupervisor@example.com",
-//                "NewPass123!",
-//                "newsupervisor",
-//                Role.SUPERVISOR
-//        );
-//
-//        StepVerifier.create(authService.register(request))
-//                .assertNext(dto -> {
-//                    assertThat(dto.id()).isNotNull();
-//                    assertThat(dto.role()).isEqualTo(Role.SUPERVISOR);
-//                })
-//                .verifyComplete();
-//
-//        Optional<User> saved = userRepository.findByEmail("newsupervisor@example.com");
-//        assertTrue(saved.isPresent());
-//        assertThat(saved.get().getRole()).isEqualTo(Role.SUPERVISOR);
-//    }
-//}
-//
+// test/java/imbuy/user/UserServiceIntegrationTest.java
+package imbuy.user.auth;
+
+import imbuy.user.application.dto.*;
+import imbuy.user.domain.model.Role;
+import imbuy.user.infrastructure.security.JwtServiceAdapter;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@SpringBootTest(properties = {
+        "spring.flyway.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect"
+})
+@Testcontainers
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class AuthServiceIntegrationTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("testdb")
+            .withUsername("test")
+            .withPassword("test");
+
+    @Container
+    static KafkaContainer kafka = new KafkaContainer(
+            DockerImageName.parse("confluentinc/cp-kafka:7.6.1")
+                    .asCompatibleSubstituteFor("apache/kafka")
+    );
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        // PostgreSQL JDBC (для JPA)
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+
+        // Kafka
+        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
+        registry.add("spring.kafka.consumer.group-id", () -> "test-group");
+
+        // JWT
+        registry.add("app.security.jwt.secret", () -> "dGhpc19pcy1hLWxvbmdlci1iYXNlNjQtand0LXNlY3JldC1rZXk=");
+        registry.add("app.security.jwt.access-token-validity", () -> "3600000");
+        registry.add("app.security.jwt.refresh-token-validity", () -> "1209600000");
+        registry.add("app.security.default-supervisor.email", () -> "supervisor@test.com");
+        registry.add("app.security.default-supervisor.password", () -> "Supervisor123!");
+        registry.add("app.security.default-supervisor.username", () -> "TestSupervisor");
+    }
+
+    @Autowired
+    private imbuy.user.application.port.in.AuthUseCase authUseCase;
+
+    @Autowired
+    private imbuy.user.application.port.in.UserUseCase userUseCase;
+
+    @Autowired
+    private JwtServiceAdapter jwtService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private KafkaTemplate<String, Object> kafkaTemplate;
+
+    private static String testUserEmail = "test@example.com";
+    private static String testUserPassword = "Password123!";
+    private static Long testUserId;
+
+    @BeforeAll
+    static void beforeAll() {
+        postgres.start();
+        kafka.start();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        kafka.stop();
+        postgres.stop();
+    }
+
+    @BeforeEach
+    void setUp() {
+        // Настраиваем мок для KafkaTemplate, чтобы тесты не падали
+        when(kafkaTemplate.send(any(), any())).thenReturn(null);
+    }
+
+    @Test
+    @Order(1)
+    void shouldRegisterUser() {
+        RegisterRequest registerRequest = new RegisterRequest(
+                testUserEmail,
+                testUserPassword,
+                "testuser",
+                Role.USER
+        );
+
+        StepVerifier.create(authUseCase.register(registerRequest))
+                .assertNext(userDto -> {
+                    assertThat(userDto).isNotNull();
+                    assertThat(userDto.email()).isEqualTo(testUserEmail);
+                    assertThat(userDto.username()).isEqualTo("testuser");
+                    assertThat(userDto.role()).isEqualTo(Role.USER);
+                    testUserId = userDto.id();
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Order(2)
+    void shouldFailRegisterWithExistingEmail() {
+        RegisterRequest registerRequest = new RegisterRequest(
+                testUserEmail, // Уже существующий email
+                "AnotherPassword123!",
+                "anotheruser",
+                Role.USER
+        );
+
+        StepVerifier.create(authUseCase.register(registerRequest))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof RuntimeException &&
+                                throwable.getMessage().contains("Email exists"))
+                .verify();
+    }
+
+    @Test
+    @Order(3)
+    void shouldLoginWithValidCredentials() {
+        LoginRequest loginRequest = new LoginRequest(
+                testUserEmail,
+                testUserPassword
+        );
+
+        StepVerifier.create(authUseCase.login(loginRequest))
+                .assertNext(authResponse -> {
+                    assertThat(authResponse).isNotNull();
+                    assertThat(authResponse.user().email()).isEqualTo(testUserEmail);
+                    assertThat(authResponse.accessToken()).isNotBlank();
+                    assertThat(authResponse.refreshToken()).isNotBlank();
+
+                    // Проверяем, что токены валидны
+                    assertThat(jwtService.isValid(authResponse.accessToken(), testUserEmail)).isTrue();
+                    assertThat(jwtService.isRefresh(authResponse.refreshToken())).isTrue();
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Order(4)
+    void shouldFailLoginWithWrongPassword() {
+        LoginRequest loginRequest = new LoginRequest(
+                testUserEmail,
+                "WrongPassword123!"
+        );
+
+        StepVerifier.create(authUseCase.login(loginRequest))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof RuntimeException &&
+                                throwable.getMessage().contains("Invalid credentials"))
+                .verify();
+    }
+
+    @Test
+    @Order(5)
+    void shouldFailLoginWithNonExistentEmail() {
+        LoginRequest loginRequest = new LoginRequest(
+                "nonexistent@example.com",
+                "Password123!"
+        );
+
+        StepVerifier.create(authUseCase.login(loginRequest))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof RuntimeException &&
+                                throwable.getMessage().contains("Invalid credentials"))
+                .verify();
+    }
+
+    @Test
+    @Order(8)
+    void shouldFailRefreshWithAccessToken() {
+        // Получаем access token
+        LoginRequest loginRequest = new LoginRequest(testUserEmail, testUserPassword);
+        AuthResponse authResponse = authUseCase.login(loginRequest).block(Duration.ofSeconds(5));
+
+        // Пытаемся использовать access token как refresh token
+        RefreshTokenRequest refreshRequest = new RefreshTokenRequest(
+                authResponse.accessToken()
+        );
+
+        StepVerifier.create(authUseCase.refresh(refreshRequest))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof RuntimeException &&
+                                throwable.getMessage().contains("Invalid refresh token"))
+                .verify();
+    }
+    
+    @Test
+    @Order(11)
+    void shouldFailFindUserWithNonExistentId() {
+        Long nonExistentId = 999999L;
+
+        StepVerifier.create(userUseCase.findById(nonExistentId, testUserId))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof RuntimeException &&
+                                throwable.getMessage().contains("User not found"))
+                .verify();
+    }
+
+    @Test
+    @Order(15)
+    void shouldCreateSupervisorUser() {
+        RegisterRequest supervisorRequest = new RegisterRequest(
+                "supervisor2@example.com",
+                "Supervisor123!",
+                "supervisor2",
+                Role.SUPERVISOR
+        );
+
+        StepVerifier.create(authUseCase.register(supervisorRequest))
+                .assertNext(userDto -> {
+                    assertThat(userDto).isNotNull();
+                    assertThat(userDto.email()).isEqualTo("supervisor2@example.com");
+                    assertThat(userDto.role()).isEqualTo(Role.SUPERVISOR);
+                    assertThat(userDto.username()).isEqualTo("supervisor2");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Order(17)
+    void shouldHandleEmptyUpdateRequest() {
+        UpdateUserRequest emptyRequest = new UpdateUserRequest(null, null);
+
+        StepVerifier.create(userUseCase.updateProfile(testUserId, emptyRequest, testUserId))
+                .assertNext(userDto -> {
+                    assertThat(userDto.id()).isEqualTo(testUserId);
+                    assertThat(userDto.email()).isEqualTo(testUserEmail);
+                    // Ничего не должно измениться
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Order(18)
+    void shouldRegisterUserWithNullUsername() {
+        RegisterRequest request = new RegisterRequest(
+                "noname@example.com",
+                "Password123!",
+                null, // null username
+                Role.USER
+        );
+
+        StepVerifier.create(authUseCase.register(request))
+                .assertNext(userDto -> {
+                    assertThat(userDto.email()).isEqualTo("noname@example.com");
+                    assertThat(userDto.username()).isNull();
+                    assertThat(userDto.role()).isEqualTo(Role.USER);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Order(19)
+    void shouldRegisterUserWithDefaultRole() {
+        RegisterRequest request = new RegisterRequest(
+                "defaultrole@example.com",
+                "Password123!",
+                "defaultuser",
+                null // null role - должен использоваться USER по умолчанию
+        );
+
+        StepVerifier.create(authUseCase.register(request))
+                .assertNext(userDto -> {
+                    assertThat(userDto.email()).isEqualTo("defaultrole@example.com");
+                    assertThat(userDto.role()).isEqualTo(Role.USER);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    @Order(22)
+    void shouldValidatePasswordEncoding() {
+        // Проверяем, что пароли правильно хешируются
+        String rawPassword = "TestPassword123!";
+        String encoded = passwordEncoder.encode(rawPassword);
+
+        assertThat(encoded).isNotBlank();
+        assertThat(encoded).isNotEqualTo(rawPassword);
+        assertThat(passwordEncoder.matches(rawPassword, encoded)).isTrue();
+        assertThat(passwordEncoder.matches("WrongPassword", encoded)).isFalse();
+    }
+
+    @Test
+    @Order(23)
+    void testUserDomainModel() {
+        // Тестируем доменную модель
+        imbuy.user.domain.model.User user = imbuy.user.domain.model.User.builder()
+                .id(100L)
+                .email("domain@test.com")
+                .password("encodedPassword")
+                .username("domainuser")
+                .role(Role.SUPERVISOR)
+                .active(true)
+                .build();
+
+        assertThat(user.getId()).isEqualTo(100L);
+        assertThat(user.getEmail()).isEqualTo("domain@test.com");
+        assertThat(user.getUsername()).isEqualTo("domainuser");
+        assertThat(user.getRole()).isEqualTo(Role.SUPERVISOR);
+        assertThat(user.isSupervisor()).isTrue();
+
+        // Проверяем builder
+        imbuy.user.domain.model.User updatedUser = user.toBuilder()
+                .username("updatedname")
+                .build();
+
+        assertThat(updatedUser.getId()).isEqualTo(user.getId());
+        assertThat(updatedUser.getEmail()).isEqualTo(user.getEmail());
+        assertThat(updatedUser.getUsername()).isEqualTo("updatedname");
+    }
+
+    @Test
+    @Order(24)
+    void shouldCleanUpTestData() {
+        // Этот тест можно использовать для очистки тестовых данных
+        // В реальном проекте лучше использовать отдельную БД для тестов
+        // или транзакции, которые откатываются после каждого теста
+
+        assertThat(testUserId).isNotNull();
+        assertThat(testUserEmail).isNotBlank();
+
+        // Просто логируем завершение тестов
+        System.out.println("Тесты завершены. Test user ID: " + testUserId);
+    }
+}
