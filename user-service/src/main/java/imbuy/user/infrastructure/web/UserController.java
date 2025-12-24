@@ -44,10 +44,10 @@ public class UserController {
         return userUseCase.updateProfile(id, request, requesterId(authentication));
     }
 
-    private Long requesterId(Authentication authentication) {
+    private UserPrincipal requesterId(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
             return null;
         }
-        return principal.getId();
+        return principal;
     }
 }
