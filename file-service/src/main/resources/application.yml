@@ -52,3 +52,8 @@ logging:
     com.imbuy.file: DEBUG
     org.springframework.kafka: INFO
 
+app:
+  security:
+    jwt:
+      secret: ${APP_SECURITY_JWT_SECRET:dGhpc19pcy1hLWxvbmdlci1iYXNlNjQtand0LXNlY3JldC1rZXk=}
+
