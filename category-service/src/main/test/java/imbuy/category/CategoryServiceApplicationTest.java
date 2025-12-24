@@ -56,13 +56,11 @@ class CategoryServiceApplicationTest {
 
     @BeforeEach
     void beforeEach() {
-        // Delete all categories
         categoryRepositoryPort.findAll()
                 .flatMap(category -> categoryRepositoryPort.deleteById(category.getId()))
                 .collectList()
                 .block();
 
-        // Create parent category
         parentCategory = Category.builder()
                 .name("Electronics")
                 .parentId(null)
@@ -70,7 +68,6 @@ class CategoryServiceApplicationTest {
 
         parentCategory = categoryRepositoryPort.save(parentCategory).block();
 
-        // Create child categories
         childCategory1 = Category.builder()
                 .name("Laptops")
                 .parentId(parentCategory.getId())
@@ -126,7 +123,6 @@ class CategoryServiceApplicationTest {
 
     @Test
     void getAll_shouldReturnCorrectPageSize() {
-        // Add more categories
         for (int i = 0; i < 7; i++) {
             Category category = Category.builder()
                     .name("Category " + i)
@@ -256,7 +252,6 @@ class CategoryServiceApplicationTest {
         assertNotNull(leafCategory);
         categoryService.delete(leafCategory.getId()).block();
 
-        // Verify deletion by trying to find the category
         Category found = categoryRepositoryPort.findById(leafCategory.getId()).block();
         assertNull(found);
     }
@@ -488,6 +483,6 @@ class CategoryServiceApplicationTest {
                 .block();
 
         assertNotNull(result);
-        assertTrue(result.size() <= 50); // Проверяем, что размер не превышает 50 (как в контроллере)
+        assertTrue(result.size() <= 50);
     }
 }
