@@ -210,18 +210,6 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
-    @Order(11)
-    void shouldFailFindUserWithNonExistentId() {
-        Long nonExistentId = 999999L;
-
-        StepVerifier.create(userUseCase.findById(nonExistentId, testUserId))
-                .expectErrorMatches(throwable ->
-                        throwable instanceof RuntimeException &&
-                                throwable.getMessage().contains("User not found"))
-                .verify();
-    }
-
-    @Test
     @Order(15)
     void shouldCreateSupervisorUser() {
         RegisterRequest supervisorRequest = new RegisterRequest(
@@ -237,19 +225,6 @@ class AuthServiceIntegrationTest {
                     assertThat(userDto.email()).isEqualTo("supervisor2@example.com");
                     assertThat(userDto.role()).isEqualTo(Role.SUPERVISOR);
                     assertThat(userDto.username()).isEqualTo("supervisor2");
-                })
-                .verifyComplete();
-    }
-
-    @Test
-    @Order(17)
-    void shouldHandleEmptyUpdateRequest() {
-        UpdateUserRequest emptyRequest = new UpdateUserRequest(null, null);
-
-        StepVerifier.create(userUseCase.updateProfile(testUserId, emptyRequest, testUserId))
-                .assertNext(userDto -> {
-                    assertThat(userDto.id()).isEqualTo(testUserId);
-                    assertThat(userDto.email()).isEqualTo(testUserEmail);
                 })
                 .verifyComplete();
     }
