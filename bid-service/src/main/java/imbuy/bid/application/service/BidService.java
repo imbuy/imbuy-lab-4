@@ -1,5 +1,7 @@
 package imbuy.bid.application.service;
 
+import com.imbuy.events.TopicNames;
+import com.imbuy.events.bid.BidPlacedEvent;
 import imbuy.bid.application.dto.BidDto;
 import imbuy.bid.application.dto.CreateBidDto;
 import imbuy.bid.application.mapper.BidMapper;
@@ -9,6 +11,7 @@ import imbuy.bid.domain.model.Bid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
@@ -23,6 +26,8 @@ public class BidService implements BidUseCase {
 
     private final BidRepositoryPort repository;
     private final BidMapper mapper;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
 
     @Override
     public Flux<BidDto> getBidsByLotId(Long lotId, Pageable pageable) {
@@ -35,8 +40,22 @@ public class BidService implements BidUseCase {
         return validateBid(lotId, dto.amount(), userId)
                 .then(createBid(lotId, dto.amount(), userId))
                 .flatMap(repository::save)
+                .flatMap(savedBid -> {
+                    BidPlacedEvent event = new BidPlacedEvent(
+                            "bid-service",
+                            savedBid.getId(),
+                            savedBid.getLotId(),
+                            savedBid.getBidderId(),
+                            savedBid.getAmount()
+                    );
+
+                    return Mono.fromRunnable(() ->
+                            kafkaTemplate.send(TopicNames.BID_EVENTS, event)
+                    ).thenReturn(savedBid);
+                })
                 .map(mapper::mapToDto);
     }
+
 
     private Mono<Void> validateBid(Long lotId, BigDecimal amount, Long bidderId) {
         return repository.findMaxBidAmountByLotId(lotId)
