@@ -17,4 +17,6 @@ public interface BidRepositoryPort {
     Mono<Long> countBidsForLot(Long lotId);
 
     Mono<Bid> findHighestBidByLotId(Long lotId);
+
+    Mono<Void> deleteAll();
 }
