@@ -13,12 +13,12 @@ import imbuy.lot.domain.service.LotDomainService;
 import imbuy.lot.domain.enums.LotStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,33 +31,11 @@ public class LotServiceImpl implements LotUseCase {
     private final LotDomainService domainService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Override
-    public List<LotDto> getLots(LotFilterDto filter, Pageable pageable) {
-
-        List<Lot> lots;
-
-        if (filter != null) {
-            lots = lotRepository.findByFilters(
-                    filter.title(),
-                    filter.status(),
-                    filter.category_id(),
-                    filter.owner_id(),
-                    pageable
-            );
-        } else {
-            lots = lotRepository.findByStatus(LotStatus.ACTIVE, pageable);
-        }
-
-        return lots.stream()
-                .map(LotMapper::toDto)
-                .toList();
-    }
-
 
     @Override
     public LotDto getLotById(Long id) {
         Lot lot = lotRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Lot not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lot not found"));
         return LotMapper.toDto(lot);
     }
 
@@ -108,6 +86,9 @@ public class LotServiceImpl implements LotUseCase {
 
         Lot lot = lotRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Lot not found"));
+        if (lot.getOwnerId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Owner cannot approve their own lot");
+        }
 
         Lot approved = domainService.approve(lot);
         return LotMapper.toDto(lotRepository.save(approved));

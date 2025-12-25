@@ -2,7 +2,9 @@ package imbuy.lot.domain.service;
 
 import imbuy.lot.domain.model.Lot;
 import imbuy.lot.domain.enums.LotStatus;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,7 +19,7 @@ public class LotDomainService {
 
     public void validateEndDate(LocalDateTime endDate) {
         if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("End date cannot be in the past");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date cannot be in the past");
         }
     }
 

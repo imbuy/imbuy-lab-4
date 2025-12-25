@@ -2,17 +2,13 @@ package imbuy.lot.presentation.controller;
 
 import imbuy.lot.application.dto.CreateLotDto;
 import imbuy.lot.application.dto.LotDto;
-import imbuy.lot.application.dto.LotFilterDto;
 import imbuy.lot.application.dto.UpdateLotDto;
 import imbuy.lot.application.port.in.LotUseCase;
-import imbuy.lot.domain.enums.LotStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,38 +23,6 @@ import java.util.List;
 public class LotController {
 
     private final LotUseCase lotService;
-
-    @GetMapping
-    @Operation(summary = "Get all lots with pagination and filtering")
-    public ResponseEntity<List<LotDto>> getLots(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long ownerId,
-            @RequestParam(required = false) Boolean activeOnly,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        LotStatus lotStatus = null;
-        if (status != null) {
-            try {
-                lotStatus = LotStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-
-        LotFilterDto filter = new LotFilterDto(
-                title,
-                lotStatus,
-                categoryId,
-                ownerId,
-                activeOnly != null ? activeOnly : false
-        );
-
-        Pageable pageable = PageRequest.of(page, Math.min(size, 50));
-        List<LotDto> lots = lotService.getLots(filter, pageable);
-        return ResponseEntity.ok(lots);
-    }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get lot by ID")

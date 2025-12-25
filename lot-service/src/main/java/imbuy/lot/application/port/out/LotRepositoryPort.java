@@ -15,13 +15,5 @@ public interface LotRepositoryPort {
 
     List<Lot> findByStatus(LotStatus status, Pageable pageable);
 
-    List<Lot> findByFilters(
-            String title,
-            LotStatus status,
-            Long categoryId,
-            Long ownerId,
-            Pageable pageable
-    );
-
     void delete(Lot lot);
 }
