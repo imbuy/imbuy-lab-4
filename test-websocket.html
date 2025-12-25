@@ -76,7 +76,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>🔔 WebSocket Notification Test - ImBuy</h1>
+    <h1>WebSocket Notification</h1>
 
     <div class="controls">
         <label>User ID:
@@ -107,7 +107,7 @@
         const statusDiv = document.getElementById('status');
         document.getElementById('connectBtn').disabled = connected;
         document.getElementById('disconnectBtn').disabled = !connected;
-        statusDiv.textContent = connected ? '✅ Подключено' : '❌ Отключено';
+        statusDiv.textContent = connected ? 'Подключено' : 'Отключено';
         statusDiv.className = 'status ' + (connected ? 'connected' : 'disconnected');
     }
 
@@ -128,7 +128,6 @@
         });
 
         stompClient.onConnect = () => {
-            console.log('✅ STOMP connected');
             addInfoMessage('Успешно подключено к WebSocket серверу');
             updateStatus(true);
 
@@ -188,7 +187,7 @@
         const messagesDiv = document.getElementById('messages');
         const div = document.createElement('div');
         div.className = 'message message-info';
-        div.innerHTML = `<h3>ℹ️ Информация</h3><p>${text}</p><small>Время: ${new Date().toLocaleString('ru-RU')}</small>`;
+        div.innerHTML = `<h3>Информация</h3><p>${text}</p><small>Время: ${new Date().toLocaleString('ru-RU')}</small>`;
         messagesDiv.insertBefore(div, messagesDiv.firstChild);
     }
 

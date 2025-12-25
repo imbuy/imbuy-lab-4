@@ -25,7 +25,9 @@ public interface BidR2dbcRepository
     """)
     Mono<BidEntity> findHighestBidByLotId(Long lotId);
 
+    @Query("SELECT MAX(amount) FROM bids WHERE lot_id = $1")
     Mono<BigDecimal> findMaxBidAmountByLotId(Long lotId);
 
+    @Query("SELECT COUNT(*) FROM bids WHERE lot_id = :lotId")
     Mono<Long> countByLotId(Long lotId);
 }

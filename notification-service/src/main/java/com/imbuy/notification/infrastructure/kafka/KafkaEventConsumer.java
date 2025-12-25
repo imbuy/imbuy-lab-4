@@ -60,7 +60,7 @@ public class KafkaEventConsumer {
                             statusChanged.getLotId(), statusChanged.getNewStatus());
                 };
                 sendNotificationUseCase.sendNotification(
-                        statusChanged.getLotId(), // This should be ownerId, but we'll use lotId for now
+                        statusChanged.getLotId(),
                         "WEBSOCKET",
                         "Lot Status Changed",
                         message

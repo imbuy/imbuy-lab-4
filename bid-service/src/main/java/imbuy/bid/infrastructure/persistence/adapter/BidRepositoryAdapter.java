@@ -47,4 +47,9 @@ public class BidRepositoryAdapter implements BidRepositoryPort {
         return repository.findHighestBidByLotId(lotId)
                 .map(mapper::toDomain);
     }
+
+    @Override
+    public Mono<Void> deleteAll() {
+        return repository.deleteAll();
+    }
 }

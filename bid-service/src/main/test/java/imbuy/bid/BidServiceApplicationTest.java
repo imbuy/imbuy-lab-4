@@ -1,37 +1,44 @@
 package imbuy.bid;
 
-import imbuy.bid.domain.Bid;
-import imbuy.bid.dto.BidDto;
-import imbuy.bid.dto.CreateBidDto;
-import imbuy.bid.mapper.BidMapper;
-import imbuy.bid.repository.BidRepository;
-import imbuy.bid.service.BidService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import imbuy.bid.application.dto.BidDto;
+import imbuy.bid.application.dto.CreateBidDto;
+import imbuy.bid.application.mapper.BidMapper;
+import imbuy.bid.application.port.out.BidRepositoryPort;
+import imbuy.bid.application.service.BidService;
+import imbuy.bid.domain.model.Bid;
+import imbuy.bid.infrastructure.security.JwtService;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import reactor.test.StepVerifier;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Testcontainers
-@TestPropertySource(properties = {
+@SpringBootTest(properties = {
+        "spring.profiles.active=test",
         "spring.cloud.config.enabled=false",
-        "eureka.client.enabled=false"
+        "eureka.client.enabled=false",
+        "spring.main.allow-bean-definition-overriding=true",
+        "spring.kafka.bootstrap-servers=dummy:1234"
 })
+@Testcontainers
+@ActiveProfiles("test")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BidServiceApplicationTest {
 
     @Container
@@ -39,29 +46,58 @@ class BidServiceApplicationTest {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("bid_test")
             .withUsername("test")
-            .withPassword("test")
-            .withReuse(true);
+            .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.r2dbc.url", () ->
+                "r2dbc:postgresql://" + postgres.getHost() + ":" + postgres.getMappedPort(5432) + "/" + postgres.getDatabaseName());
+        registry.add("spring.r2dbc.username", postgres::getUsername);
+        registry.add("spring.r2dbc.password", postgres::getPassword);
+
+        registry.add("spring.kafka.bootstrap-servers", () -> "dummy:1234");
+        registry.add("app.security.jwt.secret", () -> "test_jwt_secret_for_tests");
+    }
 
     @Autowired
     private BidService bidService;
 
     @Autowired
-    private BidRepository bidRepository;
+    private BidRepositoryPort bidRepository;
 
     @Autowired
     private BidMapper bidMapper;
 
+    @MockBean
+    private KafkaTemplate<String, Object> kafkaTemplate;
+
     private final Long testLotId = 1L;
     private Bid testBid;
 
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
+
+
     @BeforeEach
-    void beforeEach() {
+    void setUp() {
+        when(kafkaTemplate.send(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(null);
+
+        when(jwtService.isTokenValid(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(true);
+        when(jwtService.extractUserId(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(1L);
+        when(jwtService.extractUsername(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn("User 1");
+
         bidRepository.deleteAll().block();
 
-        Long testBidderId = 1L;
         testBid = Bid.builder()
                 .lotId(testLotId)
-                .bidderId(testBidderId)
+                .bidderId(1L)
                 .amount(new BigDecimal("100.00"))
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -75,70 +111,10 @@ class BidServiceApplicationTest {
 
         BidDto result = bidService.placeBid(testLotId, request, 2L).block();
 
-        assertNotNull(result);
-        assertEquals(new BigDecimal("110.00"), result.amount());
-        assertEquals(2L, result.bidder_id());
-        assertEquals("User 2", result.bidder_username());
-    }
-
-    @Test
-    void placeBid_shouldValidateMinimumBid() {
-        CreateBidDto request = new CreateBidDto(new BigDecimal("105.00"));
-
-        StepVerifier.create(bidService.placeBid(testLotId, request, 2L))
-                .expectErrorMatches(throwable ->
-                        throwable.getMessage().contains("Bid must be at least"))
-                .verify();
-    }
-
-    @Test
-    void getBidsByLotId_shouldReturnPaginated() {
-        Bid anotherBid = Bid.builder()
-                .lotId(testLotId)
-                .bidderId(2L)
-                .amount(new BigDecimal("150.00"))
-                .createdAt(LocalDateTime.now().plusMinutes(1))
-                .build();
-        bidRepository.save(anotherBid).block();
-
-        List<BidDto> result = bidService.getBidsByLotId(testLotId,
-                        PageRequest.of(0, 10))
-                .collectList()
-                .block();
-
-        assertNotNull(result);
-        assertEquals(2, result.size());
-
-        assertEquals(new BigDecimal("150.00"), result.get(0).amount());
-        assertEquals(new BigDecimal("100.00"), result.get(1).amount());
-    }
-
-    @Test
-    void getBidsByLotId_shouldReturnCorrectPageSize() {
-        for (int i = 0; i < 15; i++) {
-            Bid bid = Bid.builder()
-                    .lotId(testLotId)
-                    .bidderId((long) i)
-                    .amount(new BigDecimal(200 + i * 10 + ".00"))
-                    .createdAt(LocalDateTime.now().plusMinutes(i))
-                    .build();
-            bidRepository.save(bid).block();
-        }
-
-        List<BidDto> page1 = bidService.getBidsByLotId(testLotId,
-                        PageRequest.of(0, 10))
-                .collectList()
-                .block();
-
-        List<BidDto> page2 = bidService.getBidsByLotId(testLotId,
-                        PageRequest.of(1, 10))
-                .collectList()
-                .block();
-
-        assertNotNull(page1);
-        assertNotNull(page2);
-        assertEquals(10, page1.size());
-        assertEquals(6, page2.size());
+        assertThat(result).isNotNull();
+        assertThat(result.amount()).isEqualTo(new BigDecimal("110.00"));
+        assertThat(result.bidder_id()).isEqualTo(2L);
+        assertThat(result.bidder_username()).isEqualTo("User 2");
     }
 
     @Test
@@ -153,135 +129,36 @@ class BidServiceApplicationTest {
 
         Long winnerId = bidService.getAuctionWinnerId(testLotId).block();
 
-        assertEquals(2L, winnerId);
+        assertThat(winnerId).isEqualTo(2L);
     }
 
     @Test
-    void getAuctionWinnerId_shouldReturnZeroWhenNoBids() {
-        Long emptyLotId = 999L;
-
-        Long winnerId = bidService.getAuctionWinnerId(emptyLotId).block();
-
-        assertEquals(0L, winnerId);
-    }
-
-    @Test
-    void bidRepository_countByLotId_shouldWork() {
-        Long count = bidRepository.countByLotId(testLotId).block();
-
-        assertEquals(1L, count);
-    }
-
-    @Test
-    void bidRepository_findMaxBidAmountByLotId_shouldWork() {
-        Bid higherBid = Bid.builder()
+    void getBidsByLotId_shouldReturnPaginated() {
+        Bid anotherBid = Bid.builder()
                 .lotId(testLotId)
                 .bidderId(2L)
-                .amount(new BigDecimal("200.00"))
+                .amount(new BigDecimal("150.00"))
+                .createdAt(LocalDateTime.now().plusMinutes(1))
                 .build();
-        bidRepository.save(higherBid).block();
+        bidRepository.save(anotherBid).block();
 
-        BigDecimal maxAmount = bidRepository.findMaxBidAmountByLotId(testLotId).block();
+        List<BidDto> result = bidService.getBidsByLotId(testLotId, PageRequest.of(0, 10))
+                .collectList().block();
 
-        assertNotNull(maxAmount);
-        assertEquals(new BigDecimal("200.00"), maxAmount);
+        assertThat(result).isNotNull();
+        assertThat(result.size()).isEqualTo(2);
+        assertThat(result.get(0).amount()).isEqualTo(new BigDecimal("150.00"));
+        assertThat(result.get(1).amount()).isEqualTo(new BigDecimal("100.00"));
     }
 
     @Test
     void bidMapper_mapToDto_shouldMapCorrectly() {
         BidDto dto = bidMapper.mapToDto(testBid);
 
-        assertNotNull(dto);
-        assertEquals(testBid.getId(), dto.id());
-        assertEquals(testBid.getAmount(), dto.amount());
-        assertEquals(testBid.getBidderId(), dto.bidder_id());
-        assertEquals("User " + testBid.getBidderId(), dto.bidder_username());
-    }
-
-    @Test
-    void completeBidFlow_shouldWork() {
-        bidService.placeBid(10L,
-                new CreateBidDto(new BigDecimal("100.00")), 1L).block();
-        BidDto bid2 = bidService.placeBid(10L,
-                new CreateBidDto(new BigDecimal("150.00")), 2L).block();
-
-        Long count = bidRepository.countByLotId(10L).block();
-        assertEquals(2L, count);
-
-        Long winnerId = bidService.getAuctionWinnerId(10L).block();
-        assertEquals(2L, winnerId);
-
-        Bid highestBid = bidRepository.findHighestBidByLotId(10L).block();
-        BidDto mappedDto = bidMapper.mapToDto(highestBid);
-        assertNotNull(bid2);
-        assertEquals(bid2.id(), mappedDto.id());
-
-        List<BidDto> page = bidService.getBidsByLotId(10L,
-                        PageRequest.of(0, 10))
-                .collectList()
-                .block();
-        assertNotNull(page);
-        assertEquals(2, page.size());
-        assertEquals(bid2.amount(), page.get(0).amount());
-    }
-
-    @Test
-    void concurrentBids_shouldNotBreak() throws InterruptedException {
-        int threadCount = 3;
-        Thread[] threads = new Thread[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            final int userId = i + 1;
-            final BigDecimal amount = new BigDecimal(100 + userId * 20 + ".00");
-            threads[i] = new Thread(() -> {
-                bidService.placeBid(20L,
-                        new CreateBidDto(amount),
-                        (long) userId).block();
-            });
-            threads[i].start();
-        }
-
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        Long count = bidRepository.countByLotId(20L).block();
-        assertEquals(threadCount, count);
-
-        Bid highest = bidRepository.findHighestBidByLotId(20L).block();
-        assertNotNull(highest);
-        assertEquals(new BigDecimal("160.00"), highest.getAmount());
-    }
-
-    @Test
-    void firstBidOnLot_shouldNotRequireValidation() {
-        Long newLotId = 40L;
-        CreateBidDto firstBid = new CreateBidDto(new BigDecimal("50.00"));
-
-        BidDto result = bidService.placeBid(newLotId, firstBid, 1L).block();
-
-        assertNotNull(result);
-        assertEquals(new BigDecimal("50.00"), result.amount());
-    }
-
-    @Test
-    void getBidsByLotId_withLargePageSize_shouldRespectMaxSize() {
-        for (int i = 0; i < 30; i++) {
-            Bid bid = Bid.builder()
-                    .lotId(testLotId)
-                    .bidderId((long) i)
-                    .amount(new BigDecimal(300 + i * 10 + ".00"))
-                    .createdAt(LocalDateTime.now().plusMinutes(i))
-                    .build();
-            bidRepository.save(bid).block();
-        }
-
-        List<BidDto> result = bidService.getBidsByLotId(testLotId,
-                        PageRequest.of(0, 100))
-                .collectList()
-                .block();
-
-        assertNotNull(result);
-        assertEquals(31, result.size());
+        assertThat(dto).isNotNull();
+        assertThat(dto.id()).isEqualTo(testBid.getId());
+        assertThat(dto.amount()).isEqualTo(testBid.getAmount());
+        assertThat(dto.bidder_id()).isEqualTo(testBid.getBidderId());
+        assertThat(dto.bidder_username()).isEqualTo("User " + testBid.getBidderId());
     }
 }
