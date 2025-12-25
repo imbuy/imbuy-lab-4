@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 @Testcontainers
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class BidServiceIntegrationTest {
+class BidServiceApplicationTest {
 
     @Container
     @ServiceConnection
