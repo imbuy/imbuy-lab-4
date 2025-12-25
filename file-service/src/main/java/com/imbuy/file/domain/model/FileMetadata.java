@@ -1,11 +1,11 @@
 package com.imbuy.file.domain.model;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,6 +36,9 @@ public class FileMetadata {
 
     @Column
     private LocalDateTime deletedAt;
+
+    @Column
+    private Long lotId;
 
     @PrePersist
     protected void onCreate() {

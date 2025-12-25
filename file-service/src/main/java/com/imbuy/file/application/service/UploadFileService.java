@@ -27,31 +27,30 @@ public class UploadFileService implements UploadFileUseCase {
 
     @Override
     @Transactional
-    public FileDto uploadFile(MultipartFile file) {
-        log.info("Uploading file: {} by user {}", file.getOriginalFilename());
+    public FileDto uploadFile(MultipartFile file, Long lotId) {
+        log.info("Uploading file: {} for lot {} by user", file.getOriginalFilename(), lotId);
 
-        // Store file
         String filePath = fileStoragePort.store(file);
 
-        // Save metadata
         FileMetadata metadata = FileMetadata.builder()
                 .fileName(file.getOriginalFilename())
                 .filePath(filePath)
                 .contentType(file.getContentType())
                 .fileSize(file.getSize())
+                .lotId(lotId)
                 .build();
 
         FileMetadata saved = filePersistencePort.save(metadata);
         FileDto dto = fileMapper.toDto(saved);
 
-        // Publish event
         FileUploadedEvent event = new FileUploadedEvent(
                 "file-service",
                 saved.getId(),
                 saved.getFileName(),
                 saved.getFilePath(),
                 saved.getFileSize(),
-                saved.getContentType()
+                saved.getContentType(),
+                saved.getLotId()
         );
         kafkaEventPort.publishEvent(TopicNames.FILE_EVENTS, event);
 

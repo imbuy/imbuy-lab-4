@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,13 +40,11 @@ public class OpenApiConfig {
     @Bean
     public OpenApiCustomizer multipartFileCustomizer() {
         return openApi -> {
-            // Создаем схему для MultipartFile
             Schema<?> multipartFileSchema = new BinarySchema()
                     .type("string")
                     .format("binary")
                     .description("Файл для загрузки");
 
-            // Добавляем схему в компоненты
             openApi.getComponents().addSchemas("MultipartFile", multipartFileSchema);
         };
     }
