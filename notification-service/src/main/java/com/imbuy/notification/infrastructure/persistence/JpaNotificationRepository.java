@@ -26,5 +26,6 @@ public interface JpaNotificationRepository extends JpaRepository<Notification, L
     @Modifying
     @Query("UPDATE Notification n SET n.read = true, n.readAt = CURRENT_TIMESTAMP WHERE n.userId = :userId AND n.read = false")
     void markAllAsRead(@Param("userId") Long userId);
+    Page<Notification> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }
 

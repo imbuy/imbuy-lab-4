@@ -15,5 +15,6 @@ public interface NotificationPersistencePort {
     Long countUnreadByUserId(Long userId);
     void markAsRead(Long id);
     void markAllAsRead(Long userId);
+    Page<Notification> findAll(Pageable pageable);
 }
 

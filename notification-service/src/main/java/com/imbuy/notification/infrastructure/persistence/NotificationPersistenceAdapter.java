@@ -30,6 +30,10 @@ public class NotificationPersistenceAdapter implements NotificationPersistencePo
     public Page<Notification> findByUserId(Long userId, Pageable pageable) {
         return repository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
     }
+    @Override
+    public Page<Notification> findAll(Pageable pageable) { // ← ДОБАВИТЬ ЭТОТ МЕТОД
+        return repository.findAllByOrderByCreatedAtDesc(pageable);
+    }
 
     @Override
     public List<Notification> findUnreadByUserId(Long userId) {

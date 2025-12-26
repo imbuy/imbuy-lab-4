@@ -23,6 +23,11 @@ public class GetNotificationsService implements GetNotificationsUseCase {
         return persistencePort.findByUserId(userId, pageable)
                 .map(mapper::toDto);
     }
+    @Override
+    public Page<NotificationDto> getAllNotifications(Pageable pageable) { // ← ДОБАВИТЬ
+        return persistencePort.findAll(pageable)
+                .map(mapper::toDto);
+    }
 
     @Override
     public Long getUnreadCount(Long userId) {

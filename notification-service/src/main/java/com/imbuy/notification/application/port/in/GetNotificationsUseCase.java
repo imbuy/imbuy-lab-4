@@ -7,5 +7,6 @@ import org.springframework.data.domain.Pageable;
 public interface GetNotificationsUseCase {
     Page<NotificationDto> getNotifications(Long userId, Pageable pageable);
     Long getUnreadCount(Long userId);
+    Page<NotificationDto> getAllNotifications(Pageable pageable);
 }
 
