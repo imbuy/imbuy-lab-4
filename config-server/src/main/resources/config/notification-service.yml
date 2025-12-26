@@ -46,7 +46,9 @@ management:
   endpoint:
     health:
       show-details: always
-
+springdoc:
+  api-docs:
+    path: /v3/api-docs
 logging:
   level:
     com.imbuy.notification: DEBUG

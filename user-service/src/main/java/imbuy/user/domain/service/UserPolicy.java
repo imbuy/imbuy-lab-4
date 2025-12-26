@@ -1,6 +1,5 @@
 package imbuy.user.domain.service;
 
-import imbuy.user.domain.model.User;
 import imbuy.user.infrastructure.security.UserPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;

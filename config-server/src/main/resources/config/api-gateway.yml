@@ -83,12 +83,17 @@ spring:
             - Path=/files/**
           filters:
             - StripPrefix=0
-
         - id: notification-ws
           uri: lb://notification-service
           predicates:
             - Path=/ws/**
 
+        - id: notification-service-swagger
+          uri: lb://notification-service
+          predicates:
+            - Path=/notifications/v3/api-docs
+          filters:
+            - StripPrefix=1
         - id: notification-service
           uri: lb://notification-service
           predicates:
@@ -117,3 +122,5 @@ springdoc:
         name: Bid Service
       - url: /files/v3/api-docs
         name: File Service
+      - url: /notifications/v3/api-docs
+        name: Notification Service
