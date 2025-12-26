@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -24,8 +25,9 @@ public class NotificationController {
     @GetMapping("/users/{userId}")
     public ResponseEntity<Page<NotificationDto>> getNotifications(
             @PathVariable Long userId,
-            Pageable pageable) {
-        return ResponseEntity.ok(getNotificationsUseCase.getNotifications(userId, pageable));
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(getNotificationsUseCase.getNotifications(userId, PageRequest.of(page, Math.min(size, 50))));
     }
 
     @GetMapping("/users/{userId}/unread-count")
@@ -36,8 +38,9 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<Page<NotificationDto>> getAllNotifications(
             @Parameter(description = "Пагинация и сортировка")
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC, size = 50) Pageable pageable) {
-        return ResponseEntity.ok(getNotificationsUseCase.getAllNotifications(pageable));
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(getNotificationsUseCase.getAllNotifications(PageRequest.of(page, Math.min(size, 50))));
     }
 
     @PutMapping("/{id}/read")

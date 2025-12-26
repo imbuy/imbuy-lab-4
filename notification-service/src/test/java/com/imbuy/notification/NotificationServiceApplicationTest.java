@@ -119,4 +119,5 @@ class NotificationServiceApplicationTest {
 
         assertThat(page.getContent()).hasSize(2);
     }
+
 }
